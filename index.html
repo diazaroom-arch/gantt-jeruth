@@ -252,6 +252,8 @@
   }
   .reprog-actions .btn-cancel{background:#fff;color:var(--ink-soft);}
   .reprog-actions .btn-confirm{background:var(--ink);color:#fff;border-color:var(--ink);}
+body.readonly .reprog-btn{display:none !important;}
+body.readonly select.st{pointer-events:none;opacity:0.5;background:#f0f0f0;}  
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -267,7 +269,10 @@
       <div>Elaborado por: <b>Equipo de mejora continua</b></div>
     </div>
   </div>
-
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px;">
+  <span id="modeLabel" style="font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;">🔒 Solo lectura</span>
+  <button id="editToggle" style="font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:600;font-size:12px;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:2px;padding:6px 14px;cursor:pointer;">Modo edición</button>
+</div>
   <div class="tabs">
     <button class="tabbtn active" data-tab="resumen">Resumen de fases</button>
     <button class="tabbtn" data-tab="cronograma">Cronograma</button>
@@ -517,7 +522,34 @@ const LS_PREFIX = 'jeruth-gantt:';
 const SUPABASE_URL = 'https://vlivrvimnfqaelbssjhb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsaXZydmltbmZxYWVsYnNzamhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTUyMTAsImV4cCI6MjEwMDczMTIxMH0.eieSrC6mGNEL8hvKQbQFSRkVCVlpqXsA7bt83N1fujM';
 const supaClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const EDIT_PASSWORD = 'Jeruth2026'; // ← Cambia esta contraseña por la que tú quieras
+let IS_EDITOR = false;
 
+function checkEditorMode(){
+  IS_EDITOR = sessionStorage.getItem('jeruth-gantt-editor') === '1';
+  document.body.classList.toggle('readonly', !IS_EDITOR);
+  const lbl = document.getElementById('modeLabel');
+  const btn = document.getElementById('editToggle');
+  if(lbl && btn){
+    lbl.textContent = IS_EDITOR ? '🔓 Modo edición activo' : '🔒 Solo lectura';
+    btn.textContent = IS_EDITOR ? 'Salir de edición' : 'Modo edición';
+  }
+}
+
+function toggleEditor(){
+  if(IS_EDITOR){
+    sessionStorage.removeItem('jeruth-gantt-editor');
+    checkEditorMode();
+  } else {
+    const pwd = prompt('Ingrese contraseña de edición:');
+    if(pwd === EDIT_PASSWORD){
+      sessionStorage.setItem('jeruth-gantt-editor', '1');
+      checkEditorMode();
+    } else if(pwd !== null){
+      alert('Contraseña incorrecta.');
+    }
+  }
+}
 async function loadState(){
   // 1. Cargar todo desde Supabase
   let dbStates = {};
@@ -1005,6 +1037,8 @@ function attachTabs(){
 
 (async function init(){
   attachTabs();
+  checkEditorMode();
+document.getElementById('editToggle').onclick = toggleEditor;
   renderWeeksHead();
   await loadState();
   recomputeEffective();
