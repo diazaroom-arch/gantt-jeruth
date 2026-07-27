@@ -516,13 +516,13 @@ const HAS_ARTIFACT_STORAGE = (typeof window!=='undefined' && window.storage && t
 const LS_PREFIX = 'jeruth-gantt:';
 const SUPABASE_URL = 'https://vlivrvimnfqaelbssjhb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsaXZydmltbmZxYWVsYnNzamhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTUyMTAsImV4cCI6MjEwMDczMTIxMH0.eieSrC6mGNEL8hvKQbQFSRkVCVlpqXsA7bt83N1fujM';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supaClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function loadState(){
   // 1. Cargar todo desde Supabase
   let dbStates = {};
   try {
-    const { data, error } = await supabase.from('task_states').select('*');
+    const { data, error } = await supaClient.from('task_states').select('*');
     if (!error && data) {
       data.forEach(row => {
         dbStates[row.task_id] = {
@@ -562,7 +562,7 @@ async function saveState(id){
     updated_at: new Date().toISOString()
   };
   try {
-    await supabase.from('task_states').upsert(payload, { onConflict: 'task_id' });
+    await supaClient.from('task_states').upsert(payload, { onConflict: 'task_id' });
   } catch(e) {
     console.error('Error guardando en Supabase:', e);
   }
