@@ -11,7 +11,1085 @@
     --paper-line:#C9D8E2;
     --ink:#0F2A43;
     --ink-soft:#3E5A72;
+    --card:#FFFFFF;<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Proyecto: Gobernanza capacitaciones de políticas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF3F6;
+    --paper-line:#C9D8E2;
+    --ink:#0F2A43;
+    --ink-soft:#3E5A72;
     --card:#FFFFFF;
+    --line:#D3DEE6;
+    --line-strong:#AFC2CF;
+    --amber:#C97A2E;
+    --amber-bg:#FBEADA;
+    --teal:#0F6E56;
+    --teal-bg:#E1F5EE;
+    --red:#A32D2D;
+    --red-bg:#FCEBEB;
+    --gray:#5F5E5A;
+    --gray-bg:#EDEBE4;
+    --blue:#185FA5;
+    --blue-bg:#E6F1FB;
+    --weeks:12;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+    background-size:28px 28px;
+    font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink);
+    padding:28px;
+  }
+  .sheet{max-width:1650px;margin:0 auto;}
+
+  .titleblock{
+    background:var(--card);
+    border:1px solid var(--line-strong);
+    border-radius:2px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    padding:20px 24px;
+    margin-bottom:14px;
+  }
+  .titleblock h1{
+    font-family:'IBM Plex Sans Condensed',sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:.2px;
+    margin:0 0 4px;
+    text-transform:uppercase;
+  }
+  .titleblock p{margin:0;color:var(--ink-soft);font-size:13px;}
+  .stamp{
+    text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);
+    border-left:1px solid var(--line);padding-left:16px;
+    display:flex;flex-direction:column;justify-content:center;gap:3px;
+  }
+  .stamp b{color:var(--ink);font-size:12px;}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .tabbtn{
+    font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:.2px;
+    background:var(--card);border:1px solid var(--line-strong);border-radius:2px;padding:9px 18px;cursor:pointer;color:var(--ink-soft);
+  }
+  .tabbtn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .summary{
+    display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px;
+    position:sticky;top:0;z-index:20;padding:10px 0;background:var(--paper);
+  }
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:2px;padding:12px 14px;
+  }
+  .card .lbl{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;}
+  .card .numrow{display:flex;align-items:baseline;gap:8px;}
+  .card .num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:500;}
+  .card .prog{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .card .prog.behind{color:var(--red);}
+  .card.total{background:var(--ink);border-color:var(--ink);}
+  .card.total .lbl{color:#B9CBD9;}
+  .card.total .num{color:#fff;font-size:26px;}
+  .card.total .prog{color:#9FB6C8;}
+  .card.total .prog.behind{color:#F3A9A9;}
+  .mini-bar{height:5px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden;position:relative;}
+  .mini-fill{height:100%;background:var(--teal);}
+  .mini-mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);}
+  .card.total .mini-bar{background:#2A4A64;}
+  .card.total .mini-fill{background:#5DCAA5;}
+  .card.total .mini-mark{background:#fff;}
+
+  .legend{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--ink-soft);margin-bottom:14px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .ghostdot{width:9px;height:9px;border:1px dashed var(--ink-soft);display:inline-block;}
+
+  .board{background:var(--card);border:1px solid var(--line-strong);border-radius:2px;overflow-x:auto;}
+
+  .weekrow{display:grid;position:sticky;top:0;background:var(--card);z-index:15;border-bottom:1px solid var(--line-strong);box-shadow:0 1px 0 var(--line-strong);min-width:calc(380px + 46px * var(--weeks));}
+  .weekrow .rowinfo-head{padding:10px 12px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;border-right:1px solid var(--line-strong);display:flex;align-items:center;}
+  .weeks-head{display:grid;grid-template-columns:repeat(var(--weeks),minmax(46px,1fr));border-right:1px solid var(--paper-line);}
+  .weeks-head div{
+    padding:8px 3px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);
+    border-right:1px solid var(--paper-line);
+  }
+  .weeks-head div b{display:block;color:var(--ink);font-size:11px;font-weight:500;}
+  .weeks-head div.iscur{background:#FFF6E8;}
+  .weeks-head div.wkclick{cursor:pointer;}
+  .weeks-head div.wkclick:hover{background:#E6F1FB;}
+  .weeks-head div.selected{outline:2px solid var(--blue);outline-offset:-2px;}
+
+  .reswk-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:12px;color:var(--ink-soft);}
+  .reswk-bar select{
+    font-family:'IBM Plex Sans',sans-serif;font-size:12px;border:1px solid var(--line-strong);border-radius:2px;
+    padding:5px 8px;background:#fff;color:var(--ink);
+  }
+  .chart-card{background:var(--card);border:1px solid var(--line-strong);border-radius:2px;padding:16px 20px;margin-top:14px;}
+  .chart-title{font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:600;font-size:13px;margin-bottom:8px;color:var(--ink);}
+  .chart-legend{display:flex;gap:16px;font-size:11px;color:var(--ink-soft);margin-top:6px;}
+  .chart-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .chart-legend .ln{width:14px;height:0;border-top:2.5px solid;display:inline-block;}
+  .chart-legend .ln.dashed{border-top-style:dashed;}
+  .month-band{display:grid;grid-template-columns:380px repeat(var(--weeks),minmax(46px,1fr));border-bottom:1px solid var(--paper-line);}
+  .month-band span{padding:4px;text-align:center;font-size:10px;letter-spacing:.6px;color:var(--ink-soft);text-transform:uppercase;}
+  .month-band span{padding:4px;text-align:center;font-size:10px;letter-spacing:.6px;color:var(--ink-soft);text-transform:uppercase;}
+
+  .grouphead{
+    display:grid;grid-template-columns:380px 1fr;background:var(--gray-bg);border-top:2px solid var(--ink);border-bottom:1px solid var(--line);cursor:pointer;min-width:calc(380px + 46px * var(--weeks));
+  }
+  .grouphead .gi{padding:9px 12px;display:flex;align-items:center;gap:8px;border-right:1px solid var(--line-strong);}
+  .grouphead .gi .tri{font-family:'IBM Plex Mono',monospace;font-size:11px;width:12px;}
+  .grouphead .gi .gt{font-size:13px;font-weight:600;}
+  .grouphead .gi .gr{font-size:11px;color:var(--ink-soft);margin-left:auto;text-align:right;}
+  .grouphead .gbar{display:flex;align-items:center;padding:0 14px;gap:10px;}
+  .grouphead .gbar .track{flex:1;height:8px;background:#DAD7CB;border-radius:4px;overflow:hidden;}
+  .grouphead .gbar .fill{height:100%;background:var(--gray);}
+  .grouphead .gbar .pct{font-family:'IBM Plex Mono',monospace;font-size:12px;width:38px;text-align:right;}
+
+  .subhead{
+    display:grid;grid-template-columns:380px 1fr;background:#F5F3EC;border-bottom:1px solid var(--line);min-width:calc(380px + 46px * var(--weeks));
+  }
+  .subhead .si{padding:5px 12px 5px 26px;font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;border-right:1px solid var(--line-strong);}
+
+  .cohead{
+    display:grid;grid-template-columns:380px 1fr;background:#FAF9F5;border-bottom:1px solid var(--line);min-width:calc(380px + 46px * var(--weeks));
+  }
+  .cohead .ci{padding:4px 12px 4px 38px;font-size:10px;color:var(--ink-soft);font-weight:600;letter-spacing:.2px;border-right:1px solid var(--line-strong);}
+
+  .row{display:grid;grid-template-columns:380px 1fr;border-bottom:1px solid var(--line);min-width:calc(380px + 46px * var(--weeks));}
+  .row.hidden{display:none;}
+  .row:hover{background:#F7FAFB;}
+  .rowinfo{padding:3px 10px 3px 38px;border-right:1px solid var(--line-strong);display:grid;grid-template-columns:1fr 28px 90px;align-items:center;gap:6px;}
+  .rowinfo .rn{font-size:11px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;cursor:help;}
+  .rowinfo .rn .reprog{color:var(--red);font-size:9px;font-family:'IBM Plex Mono',monospace;margin-left:4px;}
+  .rowctl{display:flex;gap:5px;align-items:center;flex:none;}
+  select.st{
+    font-family:'IBM Plex Sans',sans-serif;font-size:10px;border:1px solid var(--line-strong);border-radius:2px;
+    padding:1px 3px;background:#fff;color:var(--ink);height:20px;flex:none;
+  }
+  .rowtimeline{display:grid;grid-template-columns:repeat(var(--weeks),minmax(46px,1fr));position:relative;}
+  .rowtimeline::before{
+    content:"";position:absolute;top:0;bottom:0;left:0;right:0;
+    background-image:
+      repeating-linear-gradient(90deg, var(--paper-line) 0, var(--paper-line) 1px, transparent 1px, transparent calc(100%/var(--weeks))),
+      linear-gradient(180deg, var(--paper-line) 0, var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%;
+    pointer-events:none;
+  }
+  .bar{
+    position:relative;margin:4px 3px;border-radius:2px;height:13px;
+    background:var(--gray-bg);border:1px solid var(--line-strong);
+    display:flex;align-items:center;overflow:hidden;z-index:2;
+  }
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--teal-bg);}
+  .bar .lab{position:relative;z-index:1;font-family:'IBM Plex Mono',monospace;font-size:9px;padding-left:5px;color:var(--ink-soft);white-space:nowrap;}
+  .bar[data-status="pendiente"]{background:var(--gray-bg);border-color:#C9C6BB;}
+  .bar[data-status="pendiente"] .fill{background:#DAD7CB;}
+  .bar[data-status="en_curso"]{background:var(--amber-bg);border-color:#E3AE6B;}
+  .bar[data-status="en_curso"] .fill{background:#F0C68C;}
+  .bar[data-status="completado"]{background:var(--teal-bg);border-color:#8FCBAE;}
+  .bar[data-status="completado"] .fill{background:#9FE1CB;}
+  .bar[data-status="cancelado"]{background:var(--red-bg);border-color:#E7A9A9;}
+  .bar[data-status="cancelado"] .fill{background:#F0BCBC;}
+  .ghostbar{
+    position:relative;margin:4px 3px;border-radius:2px;height:13px;
+    border:1px dashed #B9484850;background:repeating-linear-gradient(45deg, transparent, transparent 3px, #F0BCBC55 3px, #F0BCBC55 6px);z-index:2;
+  }
+
+  .note{font-size:11px;color:var(--ink-soft);margin-top:14px;line-height:1.5;}
+  .note b{color:var(--ink);}
+
+  .restable{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line-strong);border-radius:2px;overflow:hidden;font-size:12px;}
+  .restable th, .restable td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;}
+  .restable th{
+    background:var(--gray-bg);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink-soft);
+    font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:600;
+  }
+  .restable td.num{font-family:'IBM Plex Mono',monospace;text-align:center;}
+  .restable td.varneg{color:var(--red);font-family:'IBM Plex Mono',monospace;text-align:center;font-weight:600;}
+  .restable td.varpos{color:var(--teal);font-family:'IBM Plex Mono',monospace;text-align:center;font-weight:600;}
+  .restable tr.totalrow{background:var(--ink);color:#fff;font-weight:600;}
+  .restable tr.totalrow td{border-bottom:none;color:#fff;}
+  .restable .fasebar{display:flex;align-items:center;gap:8px;}
+  .restable .fasebar .track{width:70px;height:6px;background:#DAD7CB;border-radius:3px;overflow:hidden;position:relative;}
+  .restable .fasebar .fill{height:100%;background:var(--teal);}
+  .restable .fasebar .mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);}
+  .res-note{font-size:11px;color:var(--ink-soft);margin:10px 0 0;line-height:1.5;}
+  .reprog-btn{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1;
+    background:transparent;color:var(--red);border:1px solid var(--red);
+    border-radius:3px;padding:2px 4px;cursor:pointer;
+    display:none;min-width:20px;max-width:24px;text-align:center;justify-self:center;
+  }
+  .reprog-btn:hover{background:var(--red);color:#fff;}
+  .reprog-btn.visible{display:inline-block;}
+  .reprog-btn.reset{
+    color:var(--teal);border-color:var(--teal);
+  }
+  .reprog-btn.reset:hover{background:var(--teal);color:#fff;}
+  .reprog-modal{
+    display:none;position:fixed;inset:0;background:rgba(15,42,67,0.4);z-index:100;
+    align-items:center;justify-content:center;
+  }
+  .reprog-modal.active{display:flex;}
+  .reprog-box{
+    background:var(--card);border:1px solid var(--line-strong);border-radius:2px;
+    padding:20px 24px;width:320px;box-shadow:0 8px 32px rgba(15,42,67,0.15);
+  }
+  .reprog-box h3{
+    font-family:'IBM Plex Sans Condensed',sans-serif;font-size:14px;font-weight:600;
+    margin:0 0 12px;color:var(--ink);
+  }
+  .reprog-box p{margin:0 0 12px;font-size:12px;color:var(--ink-soft);}
+  .reprog-box select{
+    font-family:'IBM Plex Sans',sans-serif;font-size:12px;
+    border:1px solid var(--line-strong);border-radius:2px;
+    padding:6px 8px;background:#fff;color:var(--ink);width:100%;margin-bottom:12px;
+  }
+  .reprog-actions{display:flex;gap:8px;justify-content:flex-end;}
+  .reprog-actions button{
+    font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:600;font-size:12px;
+    border:1px solid var(--line-strong);border-radius:2px;padding:6px 14px;cursor:pointer;
+  }
+  .reprog-actions .btn-cancel{background:#fff;color:var(--ink-soft);}
+  .reprog-actions .btn-confirm{background:var(--ink);color:#fff;border-color:var(--ink);}
+body.readonly .reprog-btn{display:none !important;}
+body.readonly select.st{pointer-events:none;opacity:0.5;background:#f0f0f0;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="titleblock">
+    <div>
+      <h1>Proyecto: Gobernanza capacitaciones de políticas</h1>
+      <p>Corporación Jeruth</p>
+    </div>
+    <div class="stamp">
+      <div>Elaborado por: <b>Equipo de mejora continua</b></div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px;">
+  <span id="modeLabel" style="font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;">🔒 Solo lectura</span>
+  <button id="editToggle" style="font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:600;font-size:12px;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:2px;padding:6px 14px;cursor:pointer;">Modo edición</button>
+</div>
+<div class="tabs">
+    <button class="tabbtn active" data-tab="resumen">Resumen de fases</button>
+    <button class="tabbtn" data-tab="cronograma">Cronograma</button>
+  </div>
+
+  <div class="view active" id="view-resumen">
+    <div class="reswk-bar">
+      <label for="resumenWeekSelect">Avance Programado / Real / Variación calculado a:</label>
+      <select id="resumenWeekSelect"></select>
+    </div>
+    <table class="restable" id="resumenTable"></table>
+    <div class="chart-card">
+      <div class="chart-title">Avance histórico — Programado vs. Real (acumulado por semana)</div>
+      <div id="progressChart"></div>
+      <p class="res-note">La línea Real se calcula según dónde está posicionada hoy cada actividad (su semana original, o la semana a la que fue reprogramada si se atrasó). Si una actividad se recupera más adelante, el avance aparece en la semana donde realmente se recupera, no en la semana original.</p>
+    </div>
+  </div>
+
+  <div class="view" id="view-cronograma">
+
+    <div class="summary" id="summary"></div>
+
+    <div class="legend">
+      <span><i class="dot" style="background:#DAD7CB"></i>Pendiente</span>
+      <span><i class="dot" style="background:#F0C68C"></i>En curso</span>
+      <span><i class="dot" style="background:#9FE1CB"></i>Completado</span>
+      <span><i class="dot" style="background:#F0BCBC"></i>Cancelado</span>
+      <span><i class="ghostdot"></i>Posición original (reprogramada)</span>
+      <span style="margin-left:auto;">El relleno interno de cada barra representa el % de avance ingresado.</span>
+    </div>
+
+    <div class="board">
+      <div class="weekrow" style="grid-template-columns:380px 1fr;">
+        <div class="rowinfo-head">Fase / actividad</div>
+        <div class="weeks-head" id="weeksHead"></div>
+      </div>
+      <div id="monthBand"></div>
+      <div id="groups"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Modal de reprogramación -->
+<div class="reprog-modal" id="reprogModal">
+  <div class="reprog-box">
+    <h3 id="reprogTitle">Reprogramar tarea</h3>
+    <p id="reprogDesc">Selecciona la nueva semana de inicio:</p>
+    <select id="reprogWeekSelect"></select>
+    <div class="reprog-actions">
+      <button class="btn-cancel" onclick="closeReprogModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmReprog()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ---------- Semanas del cronograma (generadas a partir de fechas reales) ----------
+const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const WEEKS = [
+  {id:1, label:'Sem 1', range:'19 Jun–3 Jul', month:'Jun–Jul'}
+];
+const WK2_START = new Date(2026,6,6); // 6 de julio de 2026 (lunes)
+(function buildWeeks(){
+  let cur = new Date(WK2_START);
+  for(let n=2;n<=20;n++){
+    const start = new Date(cur);
+    const end = new Date(cur); end.setDate(end.getDate()+4); // viernes de esa semana
+    const sm = MONTHS_ES[start.getMonth()], em = MONTHS_ES[end.getMonth()];
+    const range = sm===em ? `${start.getDate()}–${end.getDate()} ${sm}` : `${start.getDate()}${sm}–${end.getDate()}${em}`;
+    WEEKS.push({id:n, label:'Sem '+n, range, month: sm});
+    cur.setDate(cur.getDate()+7);
+  }
+})();
+
+function currentWeekIndex(){
+  const today = new Date();
+  if(today < WK2_START) return 1;
+  const diffDays = Math.floor((today - WK2_START)/(1000*60*60*24));
+  return Math.min(2 + Math.floor(diffDays/7), WEEKS.length);
+}
+const CUR_WEEK = currentWeekIndex();
+
+// ---------- Unidades de negocio (orden del PPT) ----------
+const UNITS = ['LEATHERCORP','PRIMATEX','GLOBAL SOURCING','LUXCORP','LUKERS ORIENTE','UPGRADE','LLAVE EN MANO','EL ORIENTE','SINERCORP','PANORAMA STAFF','TEXCORP','TANDEM','FASHION RETAIL','LUKERS','SAMITEX','EL SA','PANORAMA OUTSOURCING'];
+
+function buildUnitTasks(prefix, group, resp, startWeekOf){
+  return UNITS.map((u,i)=>({
+    id: prefix+'-'+i,
+    group, name:u, resp,
+    start: startWeekOf(i), duration:1
+  }));
+}
+
+// Semana de elaboración por unidad (índice según orden del PPT):
+// Sem1 (19Jun-3Jul): Leathercorp, Primatex, Global Sourcing, Luxcorp, Lukers Oriente
+// Sem2 (6-10Jul): Upgrade, Llave en Mano, El Oriente
+// Sem3 (13-17Jul), corregido: Sinercorp, Panorama Staff, Texcorp (3 negocios esa semana)
+// Desde Sem4 continúa a 2 negocios por semana con el resto
+const ACT1_WEEK_BY_INDEX = [1,1,1,1,1, 2,2,2, 3,3,3, 4,4, 5,5, 6,6];
+const act1Start = i => ACT1_WEEK_BY_INDEX[i];
+const act2Start = i => act1Start(i) + 1;          // validación con gerente
+const entregaStart = i => act2Start(i) + 1;        // entrega (referencia interna, no es fase visible)
+
+// ---------- Fase 3: creación y actualización de MOF, abierta por cargo ----------
+// Cruce validado cargo por cargo contra el ZIP "MOF CORPORATIVO 2023 - JUNIO".
+// Orden de negocio: menor cantidad de MOF por crear primero.
+const PRIORITY_ORDER = ['GLOBAL SOURCING','EL ORIENTE','LUXCORP','LEATHERCORP','LUKERS ORIENTE','PRIMATEX','UP GRADE','LLAVE EN MANO'];
+const PRIORITY_ORDER_UPDATE = ['EL ORIENTE','LUKERS ORIENTE','LUXCORP','UP GRADE','GLOBAL SOURCING','LEATHERCORP','LLAVE EN MANO','PRIMATEX']; // orden: listos primero (Sem 4), luego por prioridad
+
+const CARGOS_UPDATE = {
+  'LEATHERCORP': ['Cortador','Auditor de Talleres','Habilitadora de Calzado','Encargado de Almacén','KAM'],
+  'GLOBAL SOURCING': ['Gerente General','Gerente de Ventas Nacionales','Ejecutivo de Ventas','Jefe de Producto','Asistente Comercial','Analista Comercial de Retail y Lukers'],
+  'LUXCORP': ['Ejecutivo de Ventas'],
+  'LUKERS ORIENTE': ['Gerente de Tienda Jr.','Asesor Senior','Asesor','Supervisor de Sección','Sastre Auxiliar'],
+  'UP GRADE': ['Directora de Cuentas','Asistente de Administración','Directora de Creativo','Analista de Medios Sr.','Analista de Medios','Ejecutiva de Cuentas','Directora de Digital','Director de Arte','Diseñador Gráfico'],
+  'LLAVE EN MANO': ['Jardineros','Jefe de Administración, FM'],
+  'EL ORIENTE': ['Asesor de Venta','Sastre','Secretaria','Auxiliar de Tienda','Gerente de Tienda','Auxiliar Contable'],
+  'PRIMATEX': [],
+};
+const CARGOS_CREATE = {
+  'LEATHERCORP': ['Gerente General','Planeamiento','Auxiliar de Almacén','Asistente TPD'],
+  'GLOBAL SOURCING': ['Planner Comercial','Planner Junior'],
+  'LUXCORP': ['Gerente Comercial','KAM Junior','Asistente Comercial'],
+  'LUKERS ORIENTE': ['Preventor','Promotor','Reponedor','Gerente General','Gerente de Ventas'],
+  'UP GRADE': ['Gerente General','Director de Medios Digitales','Content Senior','Content','Diseñador IA-Audiovisual','Asistente Audiovisual','Moderador'],
+  'LLAVE EN MANO': ['Gerente General de UN Inmobiliaria','Gerente de Obras y Proyectos','Coord. Admin.','Analista Comercial y Des. Inmobiliario','Subgerente de Proyectos Nuevos y Licencias','Asistente de Licencias','Jefe de Arquitectura','Coord. Arquitectura','Arquitecto Jr.','Coord. Especialidades','Analista de Licencias','Jefe de Compras','Practicante Comercial','Coord. Compras','Jefe de Implementación y Remodelación','Practicante de Arquitectura','Analista Comercial','Sup. de Obra','PDR','FM (Facility Manager)'],
+  'EL ORIENTE': ['Gerente de Venta','Gerente General'],
+  'PRIMATEX': ['Jefe de Ventas','Ejecutivo de Ventas Zonal','Asistente Comercial','Gerente General','Ejecutivo Comercial IV','Planner Comercial','Planner Junior'],
+};
+
+function flattenCargos(map, order){
+  const out = [];
+  (order || PRIORITY_ORDER).forEach(co=>{ (map[co]||[]).forEach(cargo=> out.push({company:co, cargo})); });
+  return out;
+}
+const MOF_RATE = 3;
+const MOF_OFFSET = 3; // arranca en Sem4
+
+function scheduleCargos(list, prefix, resp, verb){
+  return list.map((item,idx)=>{
+    const before = idx, after = idx+1;
+    const start = Math.floor(before/MOF_RATE) + 1 + MOF_OFFSET;
+    const end = Math.ceil(after/MOF_RATE) + MOF_OFFSET;
+    const duration = Math.max(1, end - start + 1);
+    return {
+      id:'a3-'+prefix+'-'+idx, group:'g3', track:prefix, company:item.company,
+      name: `${item.company} — ${item.cargo}`,
+      resp, start, duration
+    };
+  });
+}
+const MOF_UPDATE_LIST = flattenCargos(CARGOS_UPDATE, PRIORITY_ORDER_UPDATE);
+const MOF_CREATE_LIST = flattenCargos(CARGOS_CREATE);
+const MOF_TASKS = [
+  ...scheduleCargos(MOF_UPDATE_LIST, 'u', 'Mary Cubas / Aroom Díaz', 'Actualizar MOF'),
+  ...scheduleCargos(MOF_CREATE_LIST, 'c', 'Carlos Sánchez', 'Crear MOF'),
+];
+
+// Nombre de negocio (clave PPT-MOF) por índice de UNITS — UPGRADE en UNITS vs "UP GRADE" en el cruce de MOF
+const UNIT_TO_MOFKEY = {};
+UNITS.forEach((u,i)=>{ UNIT_TO_MOFKEY[i] = (u==='UPGRADE' ? 'UP GRADE' : u); });
+
+// Ids y cierre (fin) de MOF por negocio, para encadenar la Fase 4
+const MOF_IDS_BY_COMPANY = {};
+const MOF_MAXEND_BY_COMPANY = {};
+MOF_TASKS.forEach(t=>{
+  (MOF_IDS_BY_COMPANY[t.company] = MOF_IDS_BY_COMPANY[t.company] || []).push(t.id);
+  const end = t.start + t.duration - 1;
+  MOF_MAXEND_BY_COMPANY[t.company] = Math.max(MOF_MAXEND_BY_COMPANY[t.company] || 0, end);
+});
+
+// FASE 4 depende del cierre de TODOS los MOF (actualizados + creados) de esa UN (+1 semana).
+// Si la UN no tiene MOF en la Fase 3 (no está entre las 8 validadas), conserva el espaciamiento anterior.
+function act4Start(i){
+  const key = UNIT_TO_MOFKEY[i];
+  if(MOF_MAXEND_BY_COMPANY[key] !== undefined) return MOF_MAXEND_BY_COMPANY[key] + 1;
+  return act2Start(i) + 2;
+}
+// FASE 5 depende del cierre de la Fase 4 de esa misma UN (+1 semana)
+function act5Start(i){ return act4Start(i) + 1; }
+
+let TASKS = [
+  ...buildUnitTasks('a1','g1','Carlos Sánchez', act1Start),
+  ...buildUnitTasks('a2','g2','Mary Cubas / Aroom Díaz', act2Start),
+  ...MOF_TASKS,
+  ...buildUnitTasks('a4','g4','Nataly Del Aguila / Maria Yllescas', act4Start),
+  ...buildUnitTasks('a5','g5','Nataly Del Aguila / Maria Yllescas', act5Start),
+];
+const TASK_BY_ID = {};
+TASKS.forEach(t=>TASK_BY_ID[t.id]=t);
+
+// ---------- Dependencias para la reprogramación en cascada ----------
+// Fase 2 depende del cierre de Fase 1 de la misma UN.
+// Fase 4 depende del cierre de TODOS los MOF de la UN (o de Fase 2 si no tiene MOF).
+// Fase 5 depende del cierre de Fase 4 de la misma UN.
+UNITS.forEach((u,i)=>{
+  TASK_BY_ID['a2-'+i].dependsOn = ['a1-'+i]; TASK_BY_ID['a2-'+i].gap = 1;
+  const key = UNIT_TO_MOFKEY[i];
+  if(MOF_IDS_BY_COMPANY[key]){
+    TASK_BY_ID['a4-'+i].dependsOn = MOF_IDS_BY_COMPANY[key].slice(); TASK_BY_ID['a4-'+i].gap = 1;
+  }else{
+    TASK_BY_ID['a4-'+i].dependsOn = ['a2-'+i]; TASK_BY_ID['a4-'+i].gap = 2;
+  }
+  TASK_BY_ID['a5-'+i].dependsOn = ['a4-'+i]; TASK_BY_ID['a5-'+i].gap = 1;
+});
+
+const GROUPS = [
+  {id:'g1', title:'FASE 1 — Elaboración de organigramas', resp:'Carlos Sánchez'},
+  {id:'g2', title:'FASE 2 — Validación con gerentes de unidad de negocio', resp:'Mary Cubas / Aroom Díaz'},
+  {id:'g3', title:'FASE 3 — Creación y actualización de MOF (por cargo)', resp:'Actualización: Mary Cubas / Aroom Díaz · Creación: Carlos Sánchez'},
+  {id:'g4', title:'FASE 4 — Sincronización matriz tipo (políticas / organigramas / MOF / cargos)', resp:'Nataly Del Aguila / Maria Yllescas'},
+  {id:'g5', title:'FASE 5 — Plan de capacitación anual (plantilla + matriz tipo)', resp:'Nataly Del Aguila / Maria Yllescas'},
+];
+
+const STATUS_LABELS = {pendiente:'Pendiente', en_curso:'En curso', completado:'Completado', cancelado:'Cancelado'};
+let STATE = {};
+
+// ---------- Estados iniciales según validación real del PPT ----------
+// Organigramas validados (con firma y fecha en el PPT) entre el 7 y el 16 de julio de 2026.
+const INITIAL_STATUS = {};
+[0,1,2,3,4,5,6,7].forEach(i=>{
+  INITIAL_STATUS['a1-'+i] = {status:'completado', pct:100};
+  INITIAL_STATUS['a2-'+i] = {status:'completado', pct:100};
+});
+// SINERCORP (8) y TEXCORP (10): la PPT ya trae el organigrama dibujado (Fase 1),
+// pero todavía sin firma/fecha de validación de gerente (Fase 2 sigue pendiente).
+INITIAL_STATUS['a1-8'] = {status:'completado', pct:100};
+INITIAL_STATUS['a1-10'] = {status:'completado', pct:100};
+
+// PISTA A — Actualización de MOF: EL ORIENTE, LUKERS ORIENTE y LUXCORP ya validados (Semana 4)
+// EL ORIENTE: 6 cargos (índices 0-5 en MOF_UPDATE_LIST)
+[0,1,2,3,4,5].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100}; });
+// LUKERS ORIENTE: 5 cargos (índices 6-10 en MOF_UPDATE_LIST)
+[6,7,8,9,10].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100}; });
+// LUXCORP: 1 cargo (índice 11 en MOF_UPDATE_LIST)
+INITIAL_STATUS['a3-u-11'] = {status:'completado', pct:100};
+
+function defaultState(id){
+  return INITIAL_STATUS[id] ? {...INITIAL_STATUS[id]} : {status:'pendiente', pct:0};
+}
+
+const HAS_ARTIFACT_STORAGE = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function');
+const LS_PREFIX = 'jeruth-gantt:';
+const SUPABASE_URL = 'https://vlivrvimnfqaelbssjhb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsaXZydmltbmZxYWVsYnNzamhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTUyMTAsImV4cCI6MjEwMDczMTIxMH0.eieSrC6mGNEL8hvKQbQFSRkVCVlpqXsA7bt83N1fujM';
+const supaClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+async function loadState(){
+  // 1. Cargar todo desde Supabase
+  let dbStates = {};
+  try {
+    const { data, error } = await supaClient.from('task_states').select('*');
+    if (!error && data) {
+      data.forEach(row => {
+        dbStates[row.task_id] = {
+          status: row.status,
+          pct: row.pct,
+          manualCurStart: row.manual_cur_start ? row.manual_cur_start : undefined
+        };
+      });
+    }
+  } catch(e) {
+    console.error('Error cargando desde Supabase:', e);
+  }
+
+  // 2. Asignar a cada tarea (fallback al estado inicial si no hay registro)
+  for(const t of TASKS){
+    const db = dbStates[t.id];
+    if (db) {
+      STATE[t.id] = {
+        status: db.status,
+        pct: db.pct,
+        manualCurStart: db.manualCurStart
+      };
+    } else {
+      STATE[t.id] = defaultState(t.id);
+    }
+    if(STATE[t.id]) delete STATE[t.id].curStart;
+  }
+}
+async function saveState(id){
+  const s = STATE[id];
+  if (!s) return;
+  const payload = {
+    task_id: id,
+    status: s.status,
+    pct: s.pct,
+    manual_cur_start: s.manualCurStart || null,
+    updated_at: new Date().toISOString()
+  };
+  try {
+    await supaClient.from('task_states').upsert(payload, { onConflict: 'task_id' });
+  } catch(e) {
+    console.error('Error guardando en Supabase:', e);
+  }
+}
+
+// ---------- Motor de reprogramación en cascada ----------
+// "Programado" siempre usa t.start (plan original, nunca cambia).
+// "Real"/posición en el Cronograma usa effectiveStart, que:
+//   1) nunca puede ser antes de que cierren sus actividades dependientes (+gap),
+//   2) nunca retrocede una vez reprogramada (queda persistida en STATE[id].curStart),
+//   3) si sigue "Pendiente" y ya se pasó su fecha, se empuja a la semana actual.
+let EFFECTIVE_MEMO = {};
+function effectiveEnd(t, memo){
+  if(memo[t.id] !== undefined) return memo[t.id];
+  memo[t.id] = t.start; // guarda temporal por si hubiera un ciclo
+  let earliest = t.start;
+  if(t.dependsOn && t.dependsOn.length){
+    const predEnds = t.dependsOn.map(id => effectiveEnd(TASK_BY_ID[id], memo));
+    earliest = Math.max(t.start, Math.max(...predEnds) + (t.gap||1));
+  }
+  // Si hay reprogramación manual, esa tiene prioridad sobre el cálculo automático
+  const manual = STATE[t.id] && STATE[t.id].manualCurStart;
+  if(manual && manual > earliest) earliest = manual;
+  const status = STATE[t.id] ? STATE[t.id].status : 'pendiente';
+  let eff = earliest;
+  // Solo empujar automáticamente si NO hay reprogramación manual
+  if(!manual && status === 'pendiente' && eff < CUR_WEEK) eff = CUR_WEEK;
+  // Guardar el resultado calculado (sin persistir manualCurStart)
+  if(STATE[t.id] && STATE[t.id].curStart !== eff){
+    STATE[t.id].curStart = eff;
+  }
+  const end = eff + t.duration - 1;
+  memo[t.id] = end;
+  return end;
+}
+function effectiveStart(t, memo){ return effectiveEnd(t, memo||EFFECTIVE_MEMO) - t.duration + 1; }
+function currentStart(t){ return effectiveStart(t, EFFECTIVE_MEMO); }
+function isReprogrammed(t){ return currentStart(t) !== t.start; }
+
+function recomputeEffective(){
+  EFFECTIVE_MEMO = {};
+  const dirty = [];
+  TASKS.forEach(t=>{
+    const before = STATE[t.id] ? STATE[t.id].curStart : undefined;
+    effectiveEnd(t, EFFECTIVE_MEMO);
+    if(STATE[t.id] && STATE[t.id].curStart !== before) dirty.push(t.id);
+  });
+  dirty.forEach(id => saveState(id));
+}
+
+function renderWeeksHead(){
+  document.documentElement.style.setProperty('--weeks', WEEKS.length);
+  const head = document.getElementById('weeksHead');
+  head.innerHTML = WEEKS.map(w=>`<div class="wkclick ${w.id===CUR_WEEK?'iscur':''} ${w.id===CRONO_SELECTED_WEEK?'selected':''}" data-week="${w.id}"><b>${w.label}</b>${w.range}</div>`).join('');
+  const band = document.getElementById('monthBand');
+  let html = '<div class="month-band"><div style="border-right:1px solid var(--paper-line);"></div>';
+  let i=0;
+  while(i<WEEKS.length){
+    let j=i; while(j<WEEKS.length && WEEKS[j].month===WEEKS[i].month) j++;
+    html += `<span style="grid-column: ${i+2} / span ${j-i}">${WEEKS[i].month}</span>`;
+    i=j;
+  }
+  html += '</div>';
+  band.innerHTML = html;
+  attachWeekClicks();
+}
+
+function taskPct(t){ return STATE[t.id] ? STATE[t.id].pct : 0; }
+function groupTasks(gid){ return TASKS.filter(t=>t.group===gid); }
+function weightedPct(ts, fn){
+  if(!ts.length) return 0;
+  const totalW = ts.reduce((s,t)=>s+t.duration,0);
+  const sum = ts.reduce((s,t)=>s+fn(t)*t.duration,0);
+  return Math.round(sum/totalW);
+}
+
+// ---- Cumulativo "a la fecha de la semana X" (para las tarjetas del Cronograma y el gráfico) ----
+function plannedCumAtWeek(t, week){
+  const end = t.start + t.duration - 1;
+  if(end < week) return 100;
+  if(t.start > week) return 0;
+  return Math.round(Math.min(100, ((week - t.start + 1)/t.duration)*100));
+}
+function realCumAtWeek(t, week){
+  const cs = currentStart(t);
+  const end = cs + t.duration - 1;
+  if(end < week) return taskPct(t);
+  if(cs > week) return 0;
+  return Math.round(taskPct(t) * Math.min(1, (week - cs + 1)/t.duration));
+}
+function groupPlannedCumAtWeek(gid, week){ return weightedPct(groupTasks(gid), t=>plannedCumAtWeek(t,week)); }
+function totalPlannedCumAtWeek(week){ return weightedPct(TASKS, t=>plannedCumAtWeek(t,week)); }
+function groupRealCumAtWeek(gid, week){ return weightedPct(groupTasks(gid), t=>realCumAtWeek(t,week)); }
+function totalRealCumAtWeek(week){ return weightedPct(TASKS, t=>realCumAtWeek(t,week)); }
+
+// ---- Solo lo que corresponde A ESA SEMANA específica, respecto al total del proyecto (para "Resumen de fases") ----
+function plannedThisWeek(t, week){ return t.start === week ? 100 : 0; }
+function realThisWeek(t, week){ return currentStart(t) === week ? taskPct(t) : 0; }
+function groupPlannedThisWeek(gid, week){ return weightedPct(groupTasks(gid), t=>plannedThisWeek(t,week)); }
+function totalPlannedThisWeek(week){ return weightedPct(TASKS, t=>plannedThisWeek(t,week)); }
+function groupRealThisWeek(gid, week){ return weightedPct(groupTasks(gid), t=>realThisWeek(t,week)); }
+function totalRealThisWeek(week){ return weightedPct(TASKS, t=>realThisWeek(t,week)); }
+
+function groupPct(gid){ return weightedPct(groupTasks(gid), taskPct); }
+function totalPct(){ return weightedPct(TASKS, taskPct); }
+
+function statusCounts(gid){
+  const ts = groupTasks(gid);
+  const c = {pendiente:0, en_curso:0, completado:0, cancelado:0};
+  ts.forEach(t=>{
+    const st = STATE[t.id] ? STATE[t.id].status : 'pendiente';
+    c[st] = (c[st]||0) + 1;
+  });
+  return c;
+}
+
+function renderSummary(){
+  const el = document.getElementById('summary');
+  const wk = WEEKS.find(w=>w.id===CRONO_SELECTED_WEEK);
+  const wkLabel = wk ? `${wk.label} (${wk.range})${CRONO_SELECTED_WEEK===CUR_WEEK?' · actual':''}` : '';
+  const cards = GROUPS.map(g=>{
+    const p = groupRealCumAtWeek(g.id, CRONO_SELECTED_WEEK), pl = groupPlannedCumAtWeek(g.id, CRONO_SELECTED_WEEK);
+    const behind = p < pl;
+    return `<div class="card">
+      <div class="lbl">Fase ${g.id.replace('g','')}</div>
+      <div class="numrow"><span class="num">${p}%</span><span class="prog ${behind?'behind':''}">prog. ${pl}%</span></div>
+      <div class="mini-bar"><div class="mini-fill" style="width:${p}%"></div><div class="mini-mark" style="left:${pl}%"></div></div>
+    </div>`;
+  }).join('');
+  const tp = totalRealCumAtWeek(CRONO_SELECTED_WEEK), tpl = totalPlannedCumAtWeek(CRONO_SELECTED_WEEK);
+  const behindT = tp < tpl;
+  el.innerHTML = `<div class="card total">
+      <div class="lbl">Avance acumulado a — ${wkLabel}</div>
+      <div class="numrow"><span class="num">${tp}%</span><span class="prog ${behindT?'behind':''}">prog. ${tpl}%</span></div>
+      <div class="mini-bar"><div class="mini-fill" style="width:${tp}%"></div><div class="mini-mark" style="left:${tpl}%"></div></div>
+    </div>` + cards;
+}
+
+function renderResumen(){
+  renderResumenWeekSelect();
+  const week = RESUMEN_SELECTED_WEEK;
+  const rows = GROUPS.map(g=>{
+    const c = statusCounts(g.id);
+    const total = groupTasks(g.id).length;
+    // Usar métricas ACUMULADAS (igual que el Cronograma)
+    const p = groupRealCumAtWeek(g.id, week), pl = groupPlannedCumAtWeek(g.id, week);
+    const varr = p - pl;
+    const varClass = varr < 0 ? 'varneg' : 'varpos';
+    return `<tr>
+      <td>${g.title}</td>
+      <td>${g.resp}</td>
+      <td class="num">${total}</td>
+      <td class="num">${c.completado}</td>
+      <td class="num">${c.en_curso}</td>
+      <td class="num">${c.pendiente}</td>
+      <td class="num">${c.cancelado}</td>
+      <td class="num">${pl}%</td>
+      <td><div class="fasebar"><div class="track"><div class="fill" style="width:${p}%"></div><div class="mark" style="left:${pl}%"></div></div><span>${p}%</span></div></td>
+      <td class="${varClass}">${varr>0?'+':''}${varr}%</td>
+    </tr>`;
+  }).join('');
+
+  const totalAll = TASKS.length;
+  const cAll = {pendiente:0, en_curso:0, completado:0, cancelado:0};
+  TASKS.forEach(t=>{ const st = STATE[t.id]?STATE[t.id].status:'pendiente'; cAll[st]=(cAll[st]||0)+1; });
+  // Usar métricas ACUMULADAS para el total también
+  const tp = totalRealCumAtWeek(week), tpl = totalPlannedCumAtWeek(week), tvar = tp-tpl;
+
+  document.getElementById('resumenTable').innerHTML = `
+    <thead><tr>
+      <th>Fase</th><th>Responsable</th><th>Actividades</th><th>Completadas</th><th>En curso</th><th>Pendientes</th><th>Canceladas</th><th>% Programado</th><th>% Real</th><th>Variación</th>
+    </tr></thead>
+    <tbody>
+      ${rows}
+      <tr class="totalrow">
+        <td>TOTAL PROYECTO</td><td>—</td>
+        <td class="num">${totalAll}</td><td class="num">${cAll.completado}</td><td class="num">${cAll.en_curso}</td><td class="num">${cAll.pendiente}</td><td class="num">${cAll.cancelado}</td>
+        <td class="num">${tpl}%</td>
+        <td><div class="fasebar"><div class="track" style="background:#2A4A64;"><div class="fill" style="background:#5DCAA5;width:${tp}%"></div><div class="mark" style="background:#fff;left:${tpl}%"></div></div><span>${tp}%</span></div></td>
+        <td style="color:${tvar<0?'#F3A9A9':'#5DCAA5'};font-family:'IBM Plex Mono',monospace;text-align:center;font-weight:600;">${tvar>0?'+':''}${tvar}%</td>
+      </tr>
+    </tbody>`;
+}
+
+function barHTML(t){
+  const st = STATE[t.id].status;
+  const pct = STATE[t.id].pct;
+  const reprog = isReprogrammed(t);
+  const curStart = currentStart(t);
+  let ghost = '';
+  if(reprog){
+    ghost = `<div class="ghostbar" style="grid-column:${t.start} / span ${t.duration}"></div>`;
+  }
+  return `<div class="rowtimeline">
+    ${ghost}
+    <div class="bar" data-status="${st}" style="grid-column:${curStart} / span ${t.duration}">
+      <div class="fill" style="width:${pct}%"></div>
+      <div class="lab">${pct}%</div>
+    </div>
+  </div>`;
+}
+
+function rowHTML(t){
+  const s = STATE[t.id];
+  const opts = Object.entries(STATUS_LABELS).map(([k,v])=>`<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('');
+  const isReprog = isReprogrammed(t);
+  const reprogIcon = isReprog ? `<span class="reprog">↻</span>` : '';
+  const hasManualReprog = STATE[t.id] && STATE[t.id].manualCurStart !== undefined;
+  const reprogBtnClass = hasManualReprog ? 'reprog-btn reset visible' : 'reprog-btn visible';
+  const reprogBtnText = hasManualReprog ? '↺' : '↻';
+  const reprogTitle = hasManualReprog ? 'Quitar reprogramación manual' : 'Reprogramar tarea';
+  const fullName = t.name.replace(/"/g,'&quot;');
+  const respName = (t.resp||'').replace(/"/g,'&quot;');
+  const tipText = respName ? `${fullName} — ${respName}` : fullName;
+  return `<div class="row" data-group="${t.group}">
+    <div class="rowinfo">
+      <div class="rn" title="${tipText}">${t.name}${reprogIcon}</div>
+      <button class="${reprogBtnClass}" data-id="${t.id}" title="${reprogTitle}" onclick="openReprogModal('${t.id}')">${reprogBtnText}</button>
+      <select class="st" data-id="${t.id}">${opts}</select>
+    </div>
+    ${barHTML(t)}
+  </div>`;
+}
+
+function groupHeadHTML(g){
+  const p = groupPct(g.id);
+  return `<div class="grouphead" data-toggle="${g.id}">
+    <div class="gi"><span class="tri">▾</span><span class="gt">${g.title}</span><span class="gr">${g.resp}</span></div>
+    <div class="gbar"><div class="track"><div class="fill" style="width:${p}%"></div></div><div class="pct">${p}%</div></div>
+  </div>`;
+}
+function subHeadHTML(gid, label){
+  return `<div class="subhead" data-group="${gid}"><div class="si">${label}</div><div></div></div>`;
+}
+function coHeadHTML(gid, label){
+  return `<div class="cohead" data-group="${gid}"><div class="ci">${label}</div><div></div></div>`;
+}
+
+function renderMofTrack(prefix){
+  let html = '';
+  let lastCompany = null;
+  TASKS.filter(t=>t.group==='g3' && t.track===prefix).forEach(t=>{
+    if(t.company !== lastCompany){
+      html += coHeadHTML('g3', t.company);
+      lastCompany = t.company;
+    }
+    html += rowHTML(t);
+  });
+  return html;
+}
+
+function renderBoard(){
+  const el = document.getElementById('groups');
+  el.innerHTML = GROUPS.map(g=>{
+    if(g.id === 'g3'){
+      return groupHeadHTML(g)
+        + subHeadHTML('g3','Pista A — Actualización de MOF (Mary Cubas / Aroom Díaz)')
+        + renderMofTrack('u')
+        + subHeadHTML('g3','Pista B — Creación de MOF (Carlos Sánchez)')
+        + renderMofTrack('c');
+    }
+    const rows = groupTasks(g.id).map(rowHTML).join('');
+    return groupHeadHTML(g) + rows;
+  }).join('');
+  attachHandlers();
+}
+
+function attachWeekClicks(){
+  document.querySelectorAll('#weeksHead .wkclick').forEach(div=>{
+    div.onclick = ()=> selectCronoWeek(Number(div.dataset.week));
+  });
+}
+
+function attachHandlers(){
+  document.querySelectorAll('.grouphead').forEach(h=>{
+    h.onclick = ()=>{
+      const gid = h.dataset.toggle;
+      const tri = h.querySelector('.tri');
+      const collapsed = tri.textContent === '▸';
+      tri.textContent = collapsed ? '▾' : '▸';
+      document.querySelectorAll(`.row[data-group="${gid}"], .subhead[data-group="${gid}"], .cohead[data-group="${gid}"]`).forEach(r=>{
+        r.classList.toggle('hidden', !collapsed ? true : false);
+      });
+    };
+  });
+  document.querySelectorAll('select.st').forEach(sel=>{
+    sel.onchange = async ()=>{
+      const id = sel.dataset.id;
+      const newStatus = sel.value;
+      STATE[id].status = newStatus;
+      const AUTO_PCT = {pendiente:0, en_curso:50, completado:100, cancelado:0};
+      STATE[id].pct = AUTO_PCT[newStatus];
+      await saveState(id);
+      recomputeEffective();
+      renderBoard(); renderSummary(); renderResumen(); renderChart();
+    };
+  });
+}
+
+// ---------- Semana seleccionada para el resumen del Cronograma (por defecto: semana actual) ----------
+let CRONO_SELECTED_WEEK = CUR_WEEK;
+function selectCronoWeek(week){
+  CRONO_SELECTED_WEEK = week;
+  renderWeeksHead();
+  renderSummary();
+}
+
+function renderChart(){
+  const el = document.getElementById('progressChart');
+  if(!el) return;
+  const weeksN = WEEKS.length;
+  const W=920, H=230, padL=36, padR=16, padT=16, padB=26;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const xFor = w => padL + (w-1)/(weeksN-1)*plotW;
+  const yFor = p => padT + (100-p)/100*plotH;
+
+  const plannedPts = [];
+  for(let w=1; w<=weeksN; w++) plannedPts.push([w, totalPlannedCumAtWeek(w)]);
+  const plannedPath = plannedPts.map((p,i)=>`${i===0?'M':'L'}${xFor(p[0]).toFixed(1)},${yFor(p[1]).toFixed(1)}`).join(' ');
+
+  // La línea real crece según la semana seleccionada en el resumen
+  const realPts = [];
+  for(let w=1; w<=Math.min(RESUMEN_SELECTED_WEEK, weeksN); w++) realPts.push([w, totalRealCumAtWeek(w)]);
+  const realPath = realPts.map((p,i)=>`${i===0?'M':'L'}${xFor(p[0]).toFixed(1)},${yFor(p[1]).toFixed(1)}`).join(' ');
+  const lastReal = realPts[realPts.length-1];
+
+  const curX = xFor(CUR_WEEK).toFixed(1);
+  const selX = xFor(RESUMEN_SELECTED_WEEK).toFixed(1);
+  const showSelMarker = RESUMEN_SELECTED_WEEK !== CUR_WEEK;
+
+  let gridlines='', ylabels='';
+  [0,25,50,75,100].forEach(p=>{
+    ylabels += `<text x="${padL-6}" y="${(yFor(p)+3).toFixed(1)}" font-size="9" fill="#3E5A72" text-anchor="end" font-family="IBM Plex Mono, monospace">${p}</text>`;
+    gridlines += `<line x1="${padL}" y1="${yFor(p).toFixed(1)}" x2="${W-padR}" y2="${yFor(p).toFixed(1)}" stroke="#C9D8E2" stroke-width="1" />`;
+  });
+  let xlabels='';
+  const step = weeksN>16 ? 2 : 1;
+  for(let w=1; w<=weeksN; w+=step){
+    xlabels += `<text x="${xFor(w).toFixed(1)}" y="${H-8}" font-size="9" fill="#3E5A72" text-anchor="middle" font-family="IBM Plex Mono, monospace">S${w}</text>`;
+  }
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;display:block;">
+      ${gridlines}
+      ${ylabels}
+      ${showSelMarker ? `<line x1="${selX}" y1="${padT}" x2="${selX}" y2="${H-padB}" stroke="#185FA5" stroke-width="1.5" stroke-dasharray="2,2" />
+      <text x="${selX}" y="${padT-4}" font-size="9" fill="#185FA5" text-anchor="middle" font-family="IBM Plex Sans Condensed">Semana vista</text>` : ''}
+      <line x1="${curX}" y1="${padT}" x2="${curX}" y2="${H-padB}" stroke="#C97A2E" stroke-width="1.5" stroke-dasharray="3,3" />
+      <text x="${curX}" y="${H-padB+14}" font-size="9" fill="#C97A2E" text-anchor="middle" font-family="IBM Plex Sans Condensed">hoy</text>
+      <path d="${plannedPath}" fill="none" stroke="#0F2A43" stroke-width="2" stroke-dasharray="5,4" />
+      <path d="${realPath}" fill="none" stroke="#0F6E56" stroke-width="2.5" />
+      ${lastReal ? `<circle cx="${xFor(lastReal[0]).toFixed(1)}" cy="${yFor(lastReal[1]).toFixed(1)}" r="3.5" fill="#0F6E56" />` : ''}
+      ${xlabels}
+    </svg>
+    <div class="chart-legend">
+      <span><i class="ln dashed" style="border-color:#0F2A43;"></i>Programado (plan original)</span>
+      <span><i class="ln" style="border-color:#0F6E56;"></i>Real (hasta la semana seleccionada)</span>
+    </div>
+  `;
+}
+
+function renderResumenWeekSelect(){
+  const sel = document.getElementById('resumenWeekSelect');
+  if(!sel) return;
+  if(!sel.dataset.built){
+    sel.innerHTML = WEEKS.map(w=>`<option value="${w.id}" ${w.id===RESUMEN_SELECTED_WEEK?'selected':''}>${w.label} (${w.range})</option>`).join('');
+    sel.dataset.built = '1';
+    sel.onchange = ()=>{ RESUMEN_SELECTED_WEEK = Number(sel.value); renderResumen(); renderChart(); };
+  }
+}
+let RESUMEN_SELECTED_WEEK = CUR_WEEK;
+
+// ---------- Modal de reprogramación ----------
+let REPROG_TARGET_ID = null;
+let REPROG_ORIGINAL_START = null;
+
+function openReprogModal(id){
+  REPROG_TARGET_ID = id;
+  const t = TASK_BY_ID[id];
+  REPROG_ORIGINAL_START = t.start;
+  const modal = document.getElementById('reprogModal');
+  const sel = document.getElementById('reprogWeekSelect');
+  const title = document.getElementById('reprogTitle');
+  const desc = document.getElementById('reprogDesc');
+
+  const hasManual = STATE[id] && STATE[id].manualCurStart !== undefined;
+
+  if(hasManual){
+    title.textContent = 'Quitar reprogramación';
+    desc.textContent = `La tarea "${t.name}" está reprogramada manualmente a la Sem ${STATE[id].manualCurStart}. ¿Volver a la Sem ${t.start} (plan original)?`;
+    sel.style.display = 'none';
+  }else{
+    title.textContent = 'Reprogramar tarea';
+    desc.textContent = `Selecciona la nueva semana de inicio para "${t.name}":`;
+    sel.style.display = 'block';
+    sel.innerHTML = WEEKS.map(w=>`<option value="${w.id}" ${w.id===t.start?'selected':''}>${w.label} (${w.range})</option>`).join('');
+  }
+
+  modal.classList.add('active');
+}
+
+function closeReprogModal(){
+  document.getElementById('reprogModal').classList.remove('active');
+  REPROG_TARGET_ID = null;
+}
+
+async function confirmReprog(){
+  if(!REPROG_TARGET_ID) return;
+  const t = TASK_BY_ID[REPROG_TARGET_ID];
+  const hasManual = STATE[REPROG_TARGET_ID] && STATE[REPROG_TARGET_ID].manualCurStart !== undefined;
+
+  if(hasManual){
+    // Quitar reprogramación manual: eliminar manualCurStart
+    delete STATE[REPROG_TARGET_ID].manualCurStart;
+  }else{
+    // Reprogramar manualmente: guardar en manualCurStart
+    const sel = document.getElementById('reprogWeekSelect');
+    const newWeek = Number(sel.value);
+    if(newWeek !== t.start){
+      STATE[REPROG_TARGET_ID].manualCurStart = newWeek;
+    }
+  }
+
+  await saveState(REPROG_TARGET_ID);
+  recomputeEffective();
+  renderBoard(); renderSummary(); renderResumen(); renderChart();
+  closeReprogModal();
+}
+
+function attachTabs(){
+  document.querySelectorAll('.tabbtn').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+btn.dataset.tab).classList.add('active');
+    };
+  });
+}
+
+const EDIT_PASSWORD = 'Jeruth2026';
+let IS_EDITOR = false;
+
+function checkEditorMode(){
+  IS_EDITOR = sessionStorage.getItem('jeruth-gantt-editor') === '1';
+  document.body.classList.toggle('readonly', !IS_EDITOR);
+  const lbl = document.getElementById('modeLabel');
+  const btn = document.getElementById('editToggle');
+  if(lbl && btn){
+    lbl.textContent = IS_EDITOR ? '🔓 Modo edición activo' : '🔒 Solo lectura';
+    btn.textContent = IS_EDITOR ? 'Salir de edición' : 'Modo edición';
+  }
+}
+
+function toggleEditor(){
+  if(IS_EDITOR){
+    sessionStorage.removeItem('jeruth-gantt-editor');
+    checkEditorMode();
+  } else {
+    const pwd = prompt('Ingrese contraseña de edición:');
+    if(pwd === EDIT_PASSWORD){
+      sessionStorage.setItem('jeruth-gantt-editor', '1');
+      checkEditorMode();
+    } else if(pwd !== null){
+      alert('Contraseña incorrecta.');
+    }
+  }
+}
+
+(async function init(){
+  attachTabs();
+  checkEditorMode();
+  document.getElementById('editToggle').onclick = toggleEditor;
+  renderWeeksHead();
+  await loadState();
+  recomputeEffective();
+  renderBoard();
+  renderSummary();
+  renderResumen();
+  renderChart();
+
+  // Sincronización en tiempo real desde Supabase
+  try {
+    supaClient
+      .channel('task_states_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_states' }, payload => {
+        const row = payload.new;
+        if (row && TASK_BY_ID[row.task_id]) {
+          STATE[row.task_id] = {
+            status: row.status,
+            pct: row.pct,
+            manualCurStart: row.manual_cur_start ? row.manual_cur_start : undefined
+          };
+          delete STATE[row.task_id].curStart;
+          recomputeEffective();
+          renderBoard(); renderSummary(); renderResumen(); renderChart();
+        }
+      })
+      .subscribe();
+  } catch(e) {
+    console.error('Error al suscribirse a cambios en tiempo real:', e);
+  }
+})();
+</script>
+</body>
+</html>
+
     --line:#D3DEE6;
     --line-strong:#AFC2CF;
     --amber:#C97A2E;
