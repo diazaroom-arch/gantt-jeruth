@@ -103,10 +103,12 @@
   .dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
   .ghostdot{width:9px;height:9px;border:1px dashed var(--ink-soft);display:inline-block;}
 
-  .board{background:var(--card);border:1px solid var(--line-strong);border-radius:2px;overflow-x:auto;}
+ .board-wrapper{background:var(--card);border:1px solid var(--line-strong);border-radius:2px;}
 .board-sticky-header{position:sticky;top:0;z-index:25;background:var(--card);}
+.board-body{overflow-x:auto;}
 .board-scroll-fake{overflow-x:auto;overflow-y:hidden;height:14px;background:transparent;}
 .scroll-fake-inner{height:1px;min-width:calc(380px + 46px * var(--weeks));}
+#groups{min-width:calc(380px + 46px * var(--weeks));}
 .weekrow{display:grid;background:var(--card);z-index:15;border-bottom:1px solid var(--line-strong);box-shadow:0 1px 0 var(--line-strong);min-width:calc(380px + 46px * var(--weeks));}
   .weekrow .rowinfo-head{padding:10px 12px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;border-right:1px solid var(--line-strong);display:flex;align-items:center;}
   .weeks-head{display:grid;grid-template-columns:repeat(var(--weeks),minmax(46px,1fr));border-right:1px solid var(--paper-line);}
@@ -306,19 +308,21 @@ body.readonly select.st{pointer-events:none;opacity:0.5;background:#f0f0f0;}
       <span style="margin-left:auto;">El relleno interno de cada barra representa el % de avance ingresado.</span>
     </div>
 
-          <div class="board">
-      <div class="board-sticky-header">
-        <div class="board-scroll-fake" id="scrollFake">
-          <div class="scroll-fake-inner"></div>
-        </div>
-        <div class="weekrow" style="grid-template-columns:380px 1fr;">
-          <div class="rowinfo-head">Fase / actividad</div>
-          <div class="weeks-head" id="weeksHead"></div>
-        </div>
-        <div id="monthBand"></div>
-      </div>
-      <div id="groups"></div>
+          <div class="board-wrapper">
+  <div class="board-sticky-header">
+    <div class="board-scroll-fake" id="scrollFake">
+      <div class="scroll-fake-inner"></div>
     </div>
+    <div class="weekrow" style="grid-template-columns:380px 1fr;">
+      <div class="rowinfo-head">Fase / actividad</div>
+      <div class="weeks-head" id="weeksHead"></div>
+    </div>
+    <div id="monthBand"></div>
+  </div>
+  <div class="board-body" id="boardBody">
+    <div id="groups"></div>
+  </div>
+</div>
 
 </div>
 
@@ -1050,7 +1054,7 @@ document.getElementById('editToggle').onclick = toggleEditor;
   renderBoard();
      // Sincronizar barra de scroll falsa con el board
   const fake = document.getElementById('scrollFake');
-  const board = document.querySelector('.board');
+  const board = document.getElementById('boardBody');
   if(fake && board){
     fake.addEventListener('scroll', () => board.scrollLeft = fake.scrollLeft);
     board.addEventListener('scroll', () => fake.scrollLeft = board.scrollLeft);
