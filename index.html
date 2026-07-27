@@ -252,17 +252,7 @@
   }
   .reprog-actions .btn-cancel{background:#fff;color:var(--ink-soft);}
   .reprog-actions .btn-confirm{background:var(--ink);color:#fff;border-color:var(--ink);}
-  .conn-status {
-    position: fixed; bottom: 12px; right: 12px; z-index: 200;
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    padding: 4px 10px; border-radius: 2px; background: var(--card);
-    border: 1px solid var(--line-strong); color: var(--ink-soft);
-  }
-  .conn-status.ok { color: var(--teal); border-color: var(--teal); }
-  .conn-status.err { color: var(--red); border-color: var(--red); }
-  .conn-status.sync { color: var(--amber); border-color: var(--amber); }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="sheet">
@@ -320,8 +310,6 @@
   </div>
 
 </div>
-
-<div class="conn-status" id="connStatus">Conectando...</div>
 
 <!-- Modal de reprogramación -->
 <div class="reprog-modal" id="reprogModal">
@@ -523,79 +511,38 @@ function defaultState(id){
   return INITIAL_STATUS[id] ? {...INITIAL_STATUS[id]} : {status:'pendiente', pct:0};
 }
 
-// ==================== CONFIGURACIÓN SUPABASE ====================
-const SUPABASE_URL = 'https://vlivrvimnfqaelbssjhb.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_-OQOG7RaYYN_ca7F-QeCaw_WpMgTiAK';
-
-let supabase = null;
-if(SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 10){
-  supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-
-function setConnStatus(text, type){
-  const el = document.getElementById('connStatus');
-  el.textContent = text;
-  el.className = 'conn-status ' + (type || '');
-}
+const HAS_ARTIFACT_STORAGE = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function');
+const LS_PREFIX = 'jeruth-gantt:';
 
 async function loadState(){
-  setConnStatus('Sincronizando...', 'sync');
   for(const t of TASKS){
-    STATE[t.id] = defaultState(t.id);
-    delete STATE[t.id].curStart;
-  }
-  if(!supabase){
-    setConnStatus('Sin conexión (modo local)', 'err');
-    return;
-  }
-  try{
-    const {data, error} = await supabase.from('task_states').select('*');
-    if(error) throw error;
-    if(data && data.length > 0){
-      data.forEach(row => {
-        STATE[row.task_id] = {
-          status: row.status || 'pendiente',
-          pct: row.pct || 0,
-          manualCurStart: row.manual_cur_start || undefined
-        };
-      });
-    } else {
-      const defaults = Object.entries(INITIAL_STATUS).map(([id, st]) => ({
-        task_id: id, status: st.status, pct: st.pct, manual_cur_start: null, updated_at: new Date().toISOString()
-      }));
-      if(defaults.length > 0){
-        await supabase.from('task_states').upsert(defaults);
+    const key = 'gantt:'+t.id;
+    try{
+      if(HAS_ARTIFACT_STORAGE){
+        const r = await window.storage.get(key, false);
+        STATE[t.id] = r && r.value ? JSON.parse(r.value) : defaultState(t.id);
+      }else{
+        const raw = localStorage.getItem(LS_PREFIX+key);
+        STATE[t.id] = raw ? JSON.parse(raw) : defaultState(t.id);
       }
+    }catch(e){
+      STATE[t.id] = defaultState(t.id);
     }
-    setConnStatus('Conectado a Supabase ✓', 'ok');
-  }catch(e){
-    console.error('Error cargando desde Supabase:', e);
-    setConnStatus('Error de conexión', 'err');
+    // Limpiar curStart para que effectiveEnd lo recalcule desde cero
+    if(STATE[t.id]) delete STATE[t.id].curStart;
   }
 }
-
 async function saveState(id){
-  if(!supabase){
-    setConnStatus('Sin conexión (cambios locales)', 'err');
-    return;
-  }
-  const st = STATE[id];
-  if(!st) return;
-  const payload = {
-    task_id: id, status: st.status, pct: st.pct,
-    manual_cur_start: st.manualCurStart || null,
-    updated_at: new Date().toISOString()
-  };
-  setConnStatus('Guardando...', 'sync');
+  const key = 'gantt:'+id;
+  const toSave = {status: STATE[id].status, pct: STATE[id].pct};
+  if(STATE[id].manualCurStart !== undefined) toSave.manualCurStart = STATE[id].manualCurStart;
   try{
-    const {error} = await supabase.from('task_states').upsert(payload);
-    if(error) throw error;
-    setConnStatus('Guardado ✓', 'ok');
-    setTimeout(() => setConnStatus('Conectado a Supabase ✓', 'ok'), 1500);
-  }catch(e){
-    console.error('Error guardando en Supabase:', e);
-    setConnStatus('Error al guardar', 'err');
-  }
+    if(HAS_ARTIFACT_STORAGE){
+      await window.storage.set(key, JSON.stringify(toSave), false);
+    }else{
+      localStorage.setItem(LS_PREFIX+key, JSON.stringify(toSave));
+    }
+  }catch(e){ /* almacenamiento no disponible en este navegador */ }
 }
 
 // ---------- Motor de reprogramación en cascada ----------
@@ -1034,6 +981,13 @@ function attachTabs(){
 }
 
 (async function init(){
+  // Limpiar datos viejos de localStorage para evitar reprogramaciones fantasmas
+  try{
+    for(let i=localStorage.length-1;i>=0;i--){
+      const k=localStorage.key(i);
+      if(k && k.startsWith(LS_PREFIX)) localStorage.removeItem(k);
+    }
+  }catch(e){}
   attachTabs();
   renderWeeksHead();
   await loadState();
