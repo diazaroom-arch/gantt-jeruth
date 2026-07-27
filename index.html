@@ -253,6 +253,7 @@
   .reprog-actions .btn-cancel{background:#fff;color:var(--ink-soft);}
   .reprog-actions .btn-confirm{background:var(--ink);color:#fff;border-color:var(--ink);}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="sheet">
@@ -513,36 +514,58 @@ function defaultState(id){
 
 const HAS_ARTIFACT_STORAGE = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function');
 const LS_PREFIX = 'jeruth-gantt:';
+const SUPABASE_URL = 'https://vlivrvimnfqaelbssjhb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsaXZydmltbmZxYWVsYnNzamhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTUyMTAsImV4cCI6MjEwMDczMTIxMH0.eieSrC6mGNEL8hvKQbQFSRkVCVlpqXsA7bt83N1fujM';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function loadState(){
+  // 1. Cargar todo desde Supabase
+  let dbStates = {};
+  try {
+    const { data, error } = await supabase.from('task_states').select('*');
+    if (!error && data) {
+      data.forEach(row => {
+        dbStates[row.task_id] = {
+          status: row.status,
+          pct: row.pct,
+          manualCurStart: row.manual_cur_start ? row.manual_cur_start : undefined
+        };
+      });
+    }
+  } catch(e) {
+    console.error('Error cargando desde Supabase:', e);
+  }
+
+  // 2. Asignar a cada tarea (fallback al estado inicial si no hay registro)
   for(const t of TASKS){
-    const key = 'gantt:'+t.id;
-    try{
-      if(HAS_ARTIFACT_STORAGE){
-        const r = await window.storage.get(key, false);
-        STATE[t.id] = r && r.value ? JSON.parse(r.value) : defaultState(t.id);
-      }else{
-        const raw = localStorage.getItem(LS_PREFIX+key);
-        STATE[t.id] = raw ? JSON.parse(raw) : defaultState(t.id);
-      }
-    }catch(e){
+    const db = dbStates[t.id];
+    if (db) {
+      STATE[t.id] = {
+        status: db.status,
+        pct: db.pct,
+        manualCurStart: db.manualCurStart
+      };
+    } else {
       STATE[t.id] = defaultState(t.id);
     }
-    // Limpiar curStart para que effectiveEnd lo recalcule desde cero
     if(STATE[t.id]) delete STATE[t.id].curStart;
   }
 }
 async function saveState(id){
-  const key = 'gantt:'+id;
-  const toSave = {status: STATE[id].status, pct: STATE[id].pct};
-  if(STATE[id].manualCurStart !== undefined) toSave.manualCurStart = STATE[id].manualCurStart;
-  try{
-    if(HAS_ARTIFACT_STORAGE){
-      await window.storage.set(key, JSON.stringify(toSave), false);
-    }else{
-      localStorage.setItem(LS_PREFIX+key, JSON.stringify(toSave));
-    }
-  }catch(e){ /* almacenamiento no disponible en este navegador */ }
+  const s = STATE[id];
+  if (!s) return;
+  const payload = {
+    task_id: id,
+    status: s.status,
+    pct: s.pct,
+    manual_cur_start: s.manualCurStart || null,
+    updated_at: new Date().toISOString()
+  };
+  try {
+    await supabase.from('task_states').upsert(payload, { onConflict: 'task_id' });
+  } catch(e) {
+    console.error('Error guardando en Supabase:', e);
+  }
 }
 
 // ---------- Motor de reprogramación en cascada ----------
@@ -981,13 +1004,6 @@ function attachTabs(){
 }
 
 (async function init(){
-  // Limpiar datos viejos de localStorage para evitar reprogramaciones fantasmas
-  try{
-    for(let i=localStorage.length-1;i>=0;i--){
-      const k=localStorage.key(i);
-      if(k && k.startsWith(LS_PREFIX)) localStorage.removeItem(k);
-    }
-  }catch(e){}
   attachTabs();
   renderWeeksHead();
   await loadState();
@@ -996,6 +1012,28 @@ function attachTabs(){
   renderSummary();
   renderResumen();
   renderChart();
+  
+  // Sincronización en tiempo real desde Supabase
+  try {
+    supabase
+      .channel('task_states_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_states' }, payload => {
+        const row = payload.new;
+        if (row && TASK_BY_ID[row.task_id]) {
+          STATE[row.task_id] = {
+            status: row.status,
+            pct: row.pct,
+            manualCurStart: row.manual_cur_start ? row.manual_cur_start : undefined
+          };
+          delete STATE[row.task_id].curStart;
+          recomputeEffective();
+          renderBoard(); renderSummary(); renderResumen(); renderChart();
+        }
+      })
+      .subscribe();
+  } catch(e) {
+    console.error('Error al suscribirse a cambios en tiempo real:', e);
+  }
 })();
 </script>
 </body>
