@@ -627,7 +627,7 @@ function effectiveEnd(t, memo){
   }
   // Si hay reprogramación manual, esa tiene prioridad sobre el cálculo automático
   const manual = STATE[t.id] && STATE[t.id].manualCurStart;
-  if(manual && manual > earliest) earliest = manual;
+  if(manual != null) earliest = manual;
   const status = STATE[t.id] ? STATE[t.id].status : 'pendiente';
   let eff = earliest;
   // Solo empujar automáticamente si NO hay reprogramación manual
