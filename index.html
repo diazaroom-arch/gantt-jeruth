@@ -796,11 +796,11 @@ function barHTML(t){
   const curStart = currentStart(t);
   let ghost = '';
   if(reprog){
-    ghost = `<div class="ghostbar" style="grid-column:${t.start} / span ${t.duration}"></div>`;
+    ghost = `<div class="ghostbar" style="grid-column:${t.start} / span ${t.duration};grid-row:1"></div>`;
   }
   return `<div class="rowtimeline">
     ${ghost}
-    <div class="bar" data-status="${st}" style="grid-column:${curStart} / span ${t.duration}">
+    <div class="bar" data-status="${st}" style="grid-column:${curStart} / span ${t.duration};grid-row:1">
       <div class="fill" style="width:${pct}%"></div>
       <div class="lab">${pct}%</div>
     </div>
