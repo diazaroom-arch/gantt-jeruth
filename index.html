@@ -507,11 +507,21 @@ INITIAL_STATUS['a1-10'] = {status:'completado', pct:100};
 
 // PISTA A — Actualización de MOF: EL ORIENTE, LUKERS ORIENTE y LUXCORP ya validados (Semana 4)
 // EL ORIENTE: 6 cargos (índices 0-5 en MOF_UPDATE_LIST)
-[0,1,2,3,4,5].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100}; });
+[0,1,2,3,4,5].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100, manualCurStart:4}; });
 // LUKERS ORIENTE: 5 cargos (índices 6-10 en MOF_UPDATE_LIST)
-[6,7,8,9,10].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100}; });
+[6,7,8,9,10].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100, manualCurStart:4}; });
 // LUXCORP: 1 cargo (índice 11 en MOF_UPDATE_LIST)
-INITIAL_STATUS['a3-u-11'] = {status:'completado', pct:100};
+INITIAL_STATUS['a3-u-11'] = {status:'completado', pct:100, manualCurStart:4};
+
+// PISTA B — Creación de MOF validados en Semana 4
+// GLOBAL SOURCING — Planner Comercial
+INITIAL_STATUS['a3-c-0'] = {status:'completado', pct:100, manualCurStart:4};
+// EL ORIENTE — Gerente de Venta
+INITIAL_STATUS['a3-c-2'] = {status:'completado', pct:100, manualCurStart:4};
+// EL ORIENTE — Gerente General
+INITIAL_STATUS['a3-c-3'] = {status:'completado', pct:100, manualCurStart:4};
+// LEATHERCORP — Auxiliar de Almacén
+INITIAL_STATUS['a3-c-9'] = {status:'completado', pct:100, manualCurStart:4};
 
 function defaultState(id){
   return INITIAL_STATUS[id] ? {...INITIAL_STATUS[id]} : {status:'pendiente', pct:0};
