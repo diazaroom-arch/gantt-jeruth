@@ -103,8 +103,10 @@
   .dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
   .ghostdot{width:9px;height:9px;border:1px dashed var(--ink-soft);display:inline-block;}
 
-  .board{background:var(--card);border:1px solid var(--line-strong);border-radius:2px;overflow-x:auto;}
-
+  .board{background:var(--card);border:1px solid var(--line-strong);border-radius:2px;}
+.board-outer{background:var(--card);border:1px solid var(--line-strong);border-radius:2px;overflow-x:auto;}
+.board-head-wrap{position:sticky;top:0;z-index:15;background:var(--card);}
+.board-scroll-top{overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:2px;background:transparent;}
   .weekrow{display:grid;position:sticky;top:0;background:var(--card);z-index:15;border-bottom:1px solid var(--line-strong);box-shadow:0 1px 0 var(--line-strong);min-width:calc(380px + 46px * var(--weeks));}
   .weekrow .rowinfo-head{padding:10px 12px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;border-right:1px solid var(--line-strong);display:flex;align-items:center;}
   .weeks-head{display:grid;grid-template-columns:repeat(var(--weeks),minmax(46px,1fr));border-right:1px solid var(--paper-line);}
@@ -304,13 +306,20 @@ body.readonly select.st{pointer-events:none;opacity:0.5;background:#f0f0f0;}
       <span style="margin-left:auto;">El relleno interno de cada barra representa el % de avance ingresado.</span>
     </div>
 
-    <div class="board">
-      <div class="weekrow" style="grid-template-columns:380px 1fr;">
-        <div class="rowinfo-head">Fase / actividad</div>
-        <div class="weeks-head" id="weeksHead"></div>
+       <div class="board-scroll-top" id="topScrollWrap">
+      <div id="topScrollInner" style="height:1px;"></div>
+    </div>
+    <div class="board-outer">
+      <div class="board">
+        <div class="board-head-wrap">
+          <div class="weekrow" style="grid-template-columns:380px 1fr;">
+            <div class="rowinfo-head">Fase / actividad</div>
+            <div class="weeks-head" id="weeksHead"></div>
+          </div>
+          <div id="monthBand"></div>
+        </div>
+        <div id="groups"></div>
       </div>
-      <div id="monthBand"></div>
-      <div id="groups"></div>
     </div>
 
   </div>
@@ -1043,6 +1052,13 @@ document.getElementById('editToggle').onclick = toggleEditor;
   await loadState();
   recomputeEffective();
   renderBoard();
+    // Sincronizar scroll horizontal superior con el board
+  const topScroll = document.getElementById('topScrollWrap');
+  const boardOuter = document.querySelector('.board-outer');
+  if(topScroll && boardOuter){
+    topScroll.addEventListener('scroll', () => boardOuter.scrollLeft = topScroll.scrollLeft);
+    boardOuter.addEventListener('scroll', () => topScroll.scrollLeft = boardOuter.scrollLeft);
+  }
   renderSummary();
   renderResumen();
   renderChart();
