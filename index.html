@@ -131,7 +131,6 @@
   .chart-legend .ln.dashed{border-top-style:dashed;}
   .month-band{display:grid;grid-template-columns:380px repeat(var(--weeks),minmax(46px,1fr));border-bottom:1px solid var(--paper-line);}
   .month-band span{padding:4px;text-align:center;font-size:10px;letter-spacing:.6px;color:var(--ink-soft);text-transform:uppercase;}
-  .month-band span{padding:4px;text-align:center;font-size:10px;letter-spacing:.6px;color:var(--ink-soft);text-transform:uppercase;}
 
   .grouphead{
     display:grid;grid-template-columns:380px 1fr;background:var(--gray-bg);border-top:2px solid var(--ink);border-bottom:1px solid var(--line);cursor:pointer;min-width:calc(380px + 46px * var(--weeks));
@@ -280,7 +279,7 @@ body.readonly select.st{pointer-events:none;opacity:0.5;background:#f0f0f0;}
 
   <div class="view active" id="view-resumen">
     <div class="reswk-bar">
-      <label for="resumenWeekSelect">Avance Programado / Real / Variación calculado a:</label>
+      <label for="resumenWeekSelect">Avance Programado / Real / Variación calculated a:</label>
       <select id="resumenWeekSelect"></select>
     </div>
     <table class="restable" id="resumenTable"></table>
@@ -369,21 +368,16 @@ function buildUnitTasks(prefix, group, resp, startWeekOf){
   }));
 }
 
-// Semana de elaboración por unidad (índice según orden del PPT):
-// Sem1 (19Jun-3Jul): Leathercorp, Primatex, Global Sourcing, Luxcorp, Lukers Oriente
-// Sem2 (6-10Jul): Upgrade, Llave en Mano, El Oriente
-// Sem3 (13-17Jul), corregido: Sinercorp, Panorama Staff, Texcorp (3 negocios esa semana)
-// Desde Sem4 continúa a 2 negocios por semana con el resto
 const ACT1_WEEK_BY_INDEX = [1,1,1,1,1, 2,2,2, 3,3,3, 4,4, 5,5, 6,6];
 const act1Start = i => ACT1_WEEK_BY_INDEX[i];
-const act2Start = i => act1Start(i) + 1;          // validación con gerente
-const entregaStart = i => act2Start(i) + 1;        // entrega (referencia interna, no es fase visible)
+const act2Start = i => act1Start(i) + 1;
+const entregaStart = i => act2Start(i) + 1;
 
 // ---------- Fase 3: creación y actualización de MOF, abierta por cargo ----------
-// Cruce validado cargo por cargo contra el ZIP "MOF CORPORATIVO 2023 - JUNIO".
-// Orden de negocio: menor cantidad de MOF por crear primero.
-const PRIORITY_ORDER = ['GLOBAL SOURCING','EL ORIENTE','LUXCORP','LEATHERCORP','LUKERS ORIENTE','PRIMATEX','UP GRADE','LLAVE EN MANO'];
-const PRIORITY_ORDER_UPDATE = ['EL ORIENTE','LUKERS ORIENTE','LUXCORP','UP GRADE','GLOBAL SOURCING','LEATHERCORP','LLAVE EN MANO','PRIMATEX']; // orden: listos primero (Sem 4), luego por prioridad
+// Orden de negocio en Pista B (Creación): Fashion Retail se agrega por debajo de Leathercorp
+const PRIORITY_ORDER = ['GLOBAL SOURCING','EL ORIENTE','LUXCORP','LEATHERCORP','FASHION RETAIL','LUKERS ORIENTE','PRIMATEX','UP GRADE','LLAVE EN MANO'];
+// Orden de negocio en Pista A (Actualización): Fashion Retail se agrega por debajo de UP GRADE
+const PRIORITY_ORDER_UPDATE = ['EL ORIENTE','LUKERS ORIENTE','LUXCORP','UP GRADE','FASHION RETAIL','GLOBAL SOURCING','LEATHERCORP','LLAVE EN MANO','PRIMATEX'];
 
 const CARGOS_UPDATE = {
   'LEATHERCORP': ['Cortador','Auditor de Talleres','Habilitadora de Calzado','Encargado de Almacén','KAM'],
@@ -391,12 +385,15 @@ const CARGOS_UPDATE = {
   'LUXCORP': ['Ejecutivo de Ventas'],
   'LUKERS ORIENTE': ['Gerente de Tienda Jr.','Asesor Senior','Asesor','Supervisor de Sección','Sastre Auxiliar'],
   'UP GRADE': ['Directora de Cuentas','Asistente de Administración','Directora de Creativo','Analista de Medios Sr.','Analista de Medios','Ejecutiva de Cuentas','Directora de Digital','Director de Arte','Diseñador Gráfico'],
+  'FASHION RETAIL': ['Gerente General','Gerente de Venta','Gerente de Tienda','Gerente de Tienda Jr','Asesor Senior','Asesor','Sastre','Secretaria Cajera','Auxiliar','Coordinador Visual','Supervisor Visual','Vendedor Institucional'],
   'LLAVE EN MANO': ['Jardineros','Jefe de Administración, FM'],
   'EL ORIENTE': ['Asesor de Venta','Sastre','Secretaria','Auxiliar de Tienda','Gerente de Tienda','Auxiliar Contable'],
   'PRIMATEX': [],
 };
+
 const CARGOS_CREATE = {
   'LEATHERCORP': ['Gerente General','Planeamiento','Auxiliar de Almacén','Asistente TPD'],
+  'FASHION RETAIL': ['Supervisor Zonal'],
   'GLOBAL SOURCING': ['Planner Comercial','Planner Junior'],
   'LUXCORP': ['Gerente Comercial','KAM Junior','Asistente Comercial'],
   'LUKERS ORIENTE': ['Preventor','Promotor','Reponedor','Gerente General','Gerente de Ventas'],
@@ -412,21 +409,36 @@ function flattenCargos(map, order){
   return out;
 }
 const MOF_RATE = 3;
-const MOF_OFFSET = 3; // arranca en Sem4
+const MOF_OFFSET = 3;
 
 function scheduleCargos(list, prefix, resp, verb){
-  return list.map((item,idx)=>{
-    const before = idx, after = idx+1;
-    const start = Math.floor(before/MOF_RATE) + 1 + MOF_OFFSET;
-    const end = Math.ceil(after/MOF_RATE) + MOF_OFFSET;
-    const duration = Math.max(1, end - start + 1);
+  let autoIdx = 0;
+  return list.map((item, idx)=>{
+    let start, duration;
+    if (item.company === 'FASHION RETAIL') {
+      start = 8;
+      duration = 1;
+    } else {
+      const before = autoIdx;
+      const after = autoIdx + 1;
+      start = Math.floor(before/MOF_RATE) + 1 + MOF_OFFSET;
+      const end = Math.ceil(after/MOF_RATE) + MOF_OFFSET;
+      duration = Math.max(1, end - start + 1);
+      autoIdx++;
+    }
     return {
-      id:'a3-'+prefix+'-'+idx, group:'g3', track:prefix, company:item.company,
+      id: 'a3-' + prefix + '-' + idx,
+      group: 'g3',
+      track: prefix,
+      company: item.company,
       name: `${item.company} — ${item.cargo}`,
-      resp, start, duration
+      resp,
+      start,
+      duration
     };
   });
 }
+
 const MOF_UPDATE_LIST = flattenCargos(CARGOS_UPDATE, PRIORITY_ORDER_UPDATE);
 const MOF_CREATE_LIST = flattenCargos(CARGOS_CREATE);
 const MOF_TASKS = [
@@ -434,11 +446,9 @@ const MOF_TASKS = [
   ...scheduleCargos(MOF_CREATE_LIST, 'c', 'Carlos Sánchez', 'Crear MOF'),
 ];
 
-// Nombre de negocio (clave PPT-MOF) por índice de UNITS — UPGRADE en UNITS vs "UP GRADE" en el cruce de MOF
 const UNIT_TO_MOFKEY = {};
 UNITS.forEach((u,i)=>{ UNIT_TO_MOFKEY[i] = (u==='UPGRADE' ? 'UP GRADE' : u); });
 
-// Ids y cierre (fin) de MOF por negocio, para encadenar la Fase 4
 const MOF_IDS_BY_COMPANY = {};
 const MOF_MAXEND_BY_COMPANY = {};
 MOF_TASKS.forEach(t=>{
@@ -447,14 +457,11 @@ MOF_TASKS.forEach(t=>{
   MOF_MAXEND_BY_COMPANY[t.company] = Math.max(MOF_MAXEND_BY_COMPANY[t.company] || 0, end);
 });
 
-// FASE 4 depende del cierre de TODOS los MOF (actualizados + creados) de esa UN (+1 semana).
-// Si la UN no tiene MOF en la Fase 3 (no está entre las 8 validadas), conserva el espaciamiento anterior.
 function act4Start(i){
   const key = UNIT_TO_MOFKEY[i];
   if(MOF_MAXEND_BY_COMPANY[key] !== undefined) return MOF_MAXEND_BY_COMPANY[key] + 1;
   return act2Start(i) + 2;
 }
-// FASE 5 depende del cierre de la Fase 4 de esa misma UN (+1 semana)
 function act5Start(i){ return act4Start(i) + 1; }
 
 let TASKS = [
@@ -467,10 +474,6 @@ let TASKS = [
 const TASK_BY_ID = {};
 TASKS.forEach(t=>TASK_BY_ID[t.id]=t);
 
-// ---------- Dependencias para la reprogramación en cascada ----------
-// Fase 2 depende del cierre de Fase 1 de la misma UN.
-// Fase 4 depende del cierre de TODOS los MOF de la UN (o de Fase 2 si no tiene MOF).
-// Fase 5 depende del cierre de Fase 4 de la misma UN.
 UNITS.forEach((u,i)=>{
   TASK_BY_ID['a2-'+i].dependsOn = ['a1-'+i]; TASK_BY_ID['a2-'+i].gap = 1;
   const key = UNIT_TO_MOFKEY[i];
@@ -493,46 +496,31 @@ const GROUPS = [
 const STATUS_LABELS = {pendiente:'Pendiente', en_curso:'En curso', completado:'Completado', cancelado:'Cancelado'};
 let STATE = {};
 
-// ---------- Estados iniciales según validación real del PPT ----------
-// Organigramas validados (con firma y fecha en el PPT) entre el 7 y el 16 de julio de 2026.
 const INITIAL_STATUS = {};
 [0,1,2,3,4,5,6,7].forEach(i=>{
   INITIAL_STATUS['a1-'+i] = {status:'completado', pct:100};
   INITIAL_STATUS['a2-'+i] = {status:'completado', pct:100};
 });
-// SINERCORP (8) y TEXCORP (10): la PPT ya trae el organigrama dibujado (Fase 1),
-// pero todavía sin firma/fecha de validación de gerente (Fase 2 sigue pendiente).
 INITIAL_STATUS['a1-8'] = {status:'completado', pct:100};
 INITIAL_STATUS['a1-10'] = {status:'completado', pct:100};
 
-// PISTA A — Actualización de MOF: EL ORIENTE, LUKERS ORIENTE y LUXCORP ya validados (Semana 4)
-// EL ORIENTE: 6 cargos (índices 0-5 en MOF_UPDATE_LIST)
 [0,1,2,3,4,5].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100, manualCurStart:4}; });
-// LUKERS ORIENTE: 5 cargos (índices 6-10 en MOF_UPDATE_LIST)
 [6,7,8,9,10].forEach(i=>{ INITIAL_STATUS['a3-u-'+i] = {status:'completado', pct:100, manualCurStart:4}; });
-// LUXCORP: 1 cargo (índice 11 en MOF_UPDATE_LIST)
 INITIAL_STATUS['a3-u-11'] = {status:'completado', pct:100, manualCurStart:4};
 
-// PISTA B — Creación de MOF validados en Semana 4
-// GLOBAL SOURCING — Planner Comercial
 INITIAL_STATUS['a3-c-0'] = {status:'completado', pct:100, manualCurStart:4};
-// EL ORIENTE — Gerente de Venta
 INITIAL_STATUS['a3-c-2'] = {status:'completado', pct:100, manualCurStart:4};
-// EL ORIENTE — Gerente General
 INITIAL_STATUS['a3-c-3'] = {status:'completado', pct:100, manualCurStart:4};
-// LEATHERCORP — Auxiliar de Almacén
 INITIAL_STATUS['a3-c-9'] = {status:'completado', pct:100, manualCurStart:4};
 
 function defaultState(id){
   return INITIAL_STATUS[id] ? {...INITIAL_STATUS[id]} : {status:'pendiente', pct:0};
 }
 
-const HAS_ARTIFACT_STORAGE = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function');
-const LS_PREFIX = 'jeruth-gantt:';
 const SUPABASE_URL = 'https://vlivrvimnfqaelbssjhb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsaXZydmltbmZxYWVsYnNzamhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTUyMTAsImV4cCI6MjEwMDczMTIxMH0.eieSrC6mGNEL8hvKQbQFSRkVCVlpqXsA7bt83N1fujM';
 const supaClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const EDIT_PASSWORD = 'Jeruth2026'; // ← Cambia esta contraseña por la que tú quieras
+const EDIT_PASSWORD = 'Jeruth2026';
 let IS_EDITOR = false;
 
 function checkEditorMode(){
@@ -560,8 +548,8 @@ function toggleEditor(){
     }
   }
 }
+
 async function loadState(){
-  // 1. Cargar todo desde Supabase
   let dbStates = {};
   try {
     const { data, error } = await supaClient.from('task_states').select('*');
@@ -578,7 +566,6 @@ async function loadState(){
     console.error('Error cargando desde Supabase:', e);
   }
 
-  // 2. Asignar a cada tarea (fallback al estado inicial si no hay registro)
   for(const t of TASKS){
     const db = dbStates[t.id];
     if (db) {
@@ -593,6 +580,7 @@ async function loadState(){
     if(STATE[t.id]) delete STATE[t.id].curStart;
   }
 }
+
 async function saveState(id){
   const s = STATE[id];
   if (!s) return;
@@ -610,29 +598,20 @@ async function saveState(id){
   }
 }
 
-// ---------- Motor de reprogramación en cascada ----------
-// "Programado" siempre usa t.start (plan original, nunca cambia).
-// "Real"/posición en el Cronograma usa effectiveStart, que:
-//   1) nunca puede ser antes de que cierren sus actividades dependientes (+gap),
-//   2) nunca retrocede una vez reprogramada (queda persistida en STATE[id].curStart),
-//   3) si sigue "Pendiente" y ya se pasó su fecha, se empuja a la semana actual.
 let EFFECTIVE_MEMO = {};
 function effectiveEnd(t, memo){
   if(memo[t.id] !== undefined) return memo[t.id];
-  memo[t.id] = t.start; // guarda temporal por si hubiera un ciclo
+  memo[t.id] = t.start;
   let earliest = t.start;
   if(t.dependsOn && t.dependsOn.length){
     const predEnds = t.dependsOn.map(id => effectiveEnd(TASK_BY_ID[id], memo));
     earliest = Math.max(t.start, Math.max(...predEnds) + (t.gap||1));
   }
-  // Si hay reprogramación manual, esa tiene prioridad sobre el cálculo automático
   const manual = STATE[t.id] && STATE[t.id].manualCurStart;
   if(manual != null) earliest = manual;
   const status = STATE[t.id] ? STATE[t.id].status : 'pendiente';
   let eff = earliest;
-  // Solo empujar automáticamente si NO hay reprogramación manual
   if(!manual && status === 'pendiente' && eff < CUR_WEEK) eff = CUR_WEEK;
-  // Guardar el resultado calculado (sin persistir manualCurStart)
   if(STATE[t.id] && STATE[t.id].curStart !== eff){
     STATE[t.id].curStart = eff;
   }
@@ -681,7 +660,6 @@ function weightedPct(ts, fn){
   return Math.round(sum/totalW);
 }
 
-// ---- Cumulativo "a la fecha de la semana X" (para las tarjetas del Cronograma y el gráfico) ----
 function plannedCumAtWeek(t, week){
   const end = t.start + t.duration - 1;
   if(end < week) return 100;
@@ -699,14 +677,6 @@ function groupPlannedCumAtWeek(gid, week){ return weightedPct(groupTasks(gid), t
 function totalPlannedCumAtWeek(week){ return weightedPct(TASKS, t=>plannedCumAtWeek(t,week)); }
 function groupRealCumAtWeek(gid, week){ return weightedPct(groupTasks(gid), t=>realCumAtWeek(t,week)); }
 function totalRealCumAtWeek(week){ return weightedPct(TASKS, t=>realCumAtWeek(t,week)); }
-
-// ---- Solo lo que corresponde A ESA SEMANA específica, respecto al total del proyecto (para "Resumen de fases") ----
-function plannedThisWeek(t, week){ return t.start === week ? 100 : 0; }
-function realThisWeek(t, week){ return currentStart(t) === week ? taskPct(t) : 0; }
-function groupPlannedThisWeek(gid, week){ return weightedPct(groupTasks(gid), t=>plannedThisWeek(t,week)); }
-function totalPlannedThisWeek(week){ return weightedPct(TASKS, t=>plannedThisWeek(t,week)); }
-function groupRealThisWeek(gid, week){ return weightedPct(groupTasks(gid), t=>realThisWeek(t,week)); }
-function totalRealThisWeek(week){ return weightedPct(TASKS, t=>realThisWeek(t,week)); }
 
 function groupPct(gid){ return weightedPct(groupTasks(gid), taskPct); }
 function totalPct(){ return weightedPct(TASKS, taskPct); }
@@ -749,7 +719,6 @@ function renderResumen(){
   const rows = GROUPS.map(g=>{
     const c = statusCounts(g.id);
     const total = groupTasks(g.id).length;
-    // Usar métricas ACUMULADAS (igual que el Cronograma)
     const p = groupRealCumAtWeek(g.id, week), pl = groupPlannedCumAtWeek(g.id, week);
     const varr = p - pl;
     const varClass = varr < 0 ? 'varneg' : 'varpos';
@@ -770,7 +739,6 @@ function renderResumen(){
   const totalAll = TASKS.length;
   const cAll = {pendiente:0, en_curso:0, completado:0, cancelado:0};
   TASKS.forEach(t=>{ const st = STATE[t.id]?STATE[t.id].status:'pendiente'; cAll[st]=(cAll[st]||0)+1; });
-  // Usar métricas ACUMULADAS para el total también
   const tp = totalRealCumAtWeek(week), tpl = totalPlannedCumAtWeek(week), tvar = tp-tpl;
 
   document.getElementById('resumenTable').innerHTML = `
@@ -904,7 +872,6 @@ function attachHandlers(){
   });
 }
 
-// ---------- Semana seleccionada para el resumen del Cronograma (por defecto: semana actual) ----------
 let CRONO_SELECTED_WEEK = CUR_WEEK;
 function selectCronoWeek(week){
   CRONO_SELECTED_WEEK = week;
@@ -925,7 +892,6 @@ function renderChart(){
   for(let w=1; w<=weeksN; w++) plannedPts.push([w, totalPlannedCumAtWeek(w)]);
   const plannedPath = plannedPts.map((p,i)=>`${i===0?'M':'L'}${xFor(p[0]).toFixed(1)},${yFor(p[1]).toFixed(1)}`).join(' ');
 
-  // La línea real crece según la semana seleccionada en el resumen
   const realPts = [];
   for(let w=1; w<=Math.min(RESUMEN_SELECTED_WEEK, weeksN); w++) realPts.push([w, totalRealCumAtWeek(w)]);
   const realPath = realPts.map((p,i)=>`${i===0?'M':'L'}${xFor(p[0]).toFixed(1)},${yFor(p[1]).toFixed(1)}`).join(' ');
@@ -977,7 +943,6 @@ function renderResumenWeekSelect(){
 }
 let RESUMEN_SELECTED_WEEK = CUR_WEEK;
 
-// ---------- Modal de reprogramación ----------
 let REPROG_TARGET_ID = null;
 let REPROG_ORIGINAL_START = null;
 
@@ -1017,10 +982,8 @@ async function confirmReprog(){
   const hasManual = STATE[REPROG_TARGET_ID] && STATE[REPROG_TARGET_ID].manualCurStart !== undefined;
 
   if(hasManual){
-    // Quitar reprogramación manual: eliminar manualCurStart
     delete STATE[REPROG_TARGET_ID].manualCurStart;
   }else{
-    // Reprogramar manualmente: guardar en manualCurStart
     const sel = document.getElementById('reprogWeekSelect');
     const newWeek = Number(sel.value);
     if(newWeek !== t.start){
@@ -1048,7 +1011,7 @@ function attachTabs(){
 (async function init(){
   attachTabs();
   checkEditorMode();
-document.getElementById('editToggle').onclick = toggleEditor;
+  document.getElementById('editToggle').onclick = toggleEditor;
   renderWeeksHead();
   await loadState();
   recomputeEffective();
@@ -1057,7 +1020,6 @@ document.getElementById('editToggle').onclick = toggleEditor;
   renderResumen();
   renderChart();
   
-  // Sincronización en tiempo real desde Supabase
   try {
     supabase
       .channel('task_states_changes')
